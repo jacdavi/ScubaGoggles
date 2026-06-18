@@ -45,7 +45,7 @@ class GwsAuth:
         self._svc_account_email = svc_account_email
 
         if access_token is not None:
-            self._token = Credentials(token=access_token, scopes=OAUTH_SCOPES)
+            self._token = Credentials(token=access_token, scopes=DWD_SCOPES)
             return
 
         credentials_path = Path(credentials_path)
