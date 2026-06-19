@@ -193,9 +193,9 @@ class Orchestrator:
         """
 
         # pylint: disable=line-too-long
-        baselines, customerid, credentials, accesstoken, subjectemail, preferreddnsresolvers, skipdoh, quiet, breakglassaccounts, report_uuid, outputpath, outputproviderfilename, imapexclusions, sitesexclusions = itemgetter(
+        baselines, customerid, credentials, defaultauth, subjectemail, preferreddnsresolvers, skipdoh, quiet, breakglassaccounts, report_uuid, outputpath, outputproviderfilename, imapexclusions, sitesexclusions = itemgetter(
             "baselines", "customerid", "credentials",
-            "accesstoken", "subjectemail",
+            "defaultauth", "subjectemail",
             "preferreddnsresolvers", "skipdoh",
             "quiet","breakglassaccounts", "report_uuid",
             "outputpath", "outputproviderfilename",
@@ -204,7 +204,7 @@ class Orchestrator:
 
         with Provider(customerid,
                       credentials,
-                      access_token=accesstoken,
+                      default_auth=defaultauth,
                       svc_account_email=subjectemail,
                       dns_resolvers=preferreddnsresolvers,
                       doh_servers=self.args_dict['preferreddohservers'],
@@ -780,7 +780,7 @@ class Orchestrator:
             args.outputpath = Path(args.outputpath)
         args.outputpath = args.outputpath.resolve()
 
-        if args.accesstoken is None:
+        if not args.defaultauth:
             if args.credentials is None:
                 raise UserRuntimeError('Google credentials file path not provided. '
                     'Either save the credentials path using the ScubaGoggles setup '
@@ -799,7 +799,7 @@ class Orchestrator:
             raise UserRuntimeError(f'? "{args.opapath}" - OPA executable '
                                    f'missing - {see_docs}') from fnf
 
-        if args.accesstoken is None and not args.credentials.exists():
+        if not args.defaultauth and not args.credentials.exists():
             raise UserRuntimeError(f'? "{args.credentials}" - Google '
                                    f'credentials file missing - {see_docs}')
 

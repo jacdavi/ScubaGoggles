@@ -173,7 +173,7 @@ class Provider:
                  customer_id: str,
                  credentials_file: Path,
                  *, # everything after this is keyword-only
-                 access_token: str = None,
+                 default_auth: bool = False,
                  svc_account_email: str = None,
                  dns_resolvers: list = None,
                  doh_servers: list = None,
@@ -196,7 +196,7 @@ class Provider:
             retried over DoH.
         """
 
-        self._gws_auth = GwsAuth(credentials_file, access_token, svc_account_email)
+        self._gws_auth = GwsAuth(credentials_file, default_auth, svc_account_email)
         self._credentials = self._gws_auth.credentials
         self._services = {}
         self._customer_id = customer_id

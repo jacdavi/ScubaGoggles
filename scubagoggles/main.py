@@ -81,10 +81,8 @@ def get_gws_args(parser: argparse.ArgumentParser, user_config: UserConfig):
                 'If provided, will take precendence over the credentials file. '
                 'Advanced option; using a credentials file is the recommended '
                 'authentication method.')
-    parser.add_argument('--accesstoken',
-                        metavar='<access-token>',
-                        type=str,
-                        default=None,
+    parser.add_argument('--defaultauth',
+                        action='store_true',
                         help=help_msg)
 
     help_msg = ('A list of one or more abbreviated GWS baseline names that the '

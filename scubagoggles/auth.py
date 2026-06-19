@@ -7,6 +7,7 @@ This module uses a local credential.json file to authenticate to a GWS org
 import json
 from pathlib import Path
 
+from google.auth import default, iam
 from google.auth.credentials import TokenState
 from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
@@ -26,7 +27,7 @@ class GwsAuth:
     """Generates an Oauth token for accessing Google's APIs
     """
 
-    def __init__(self, credentials_path: Path, access_token: str = None,
+    def __init__(self, credentials_path: Path, default_auth: bool = False,
                  svc_account_email: str = None):
         """GwsAuth class initialization.
 
@@ -43,11 +44,35 @@ class GwsAuth:
         """
 
         self._svc_account_email = svc_account_email
+        self.default_auth = default_auth
 
-        if access_token is not None:
-            self._token = Credentials(token=access_token, scopes=DWD_SCOPES)
+        if default_auth:
+            credentials, _ = default()
+            request = Request()
+
+            # Refresh the default credentials. This ensures that the information
+            # about this account, notably the email, is populated.
+            credentials.refresh(request)
+
+            # Create an IAM signer using the default credentials.
+            signer = iam.Signer(request, credentials, credentials.service_account_email)
+
+            # Create OAuth 2.0 Service Account credentials using the IAM-based
+            # signer and the bootstrap_credential's service account email.
+            updated_credentials = Credentials(
+                signer,
+                credentials.service_account_email,
+                "https://accounts.google.com/o/oauth2/token",
+                scopes=DWD_SCOPES,
+                subject=svc_account_email,
+            )
+            updated_credentials.refresh(Request())
+
+            if not updated_credentials.valid:
+                raise Exception(f"Couldn't get valid credentials for {svc_account_email}")
+            self._token = updated_credentials
             return
-
+        
         credentials_path = Path(credentials_path)
         if not credentials_path.exists():
             raise FileNotFoundError(f'{credentials_path} - credentials file '
@@ -115,6 +140,10 @@ class GwsAuth:
                 str(self._credentials_path),
                 scopes=DASA_SCOPES
             )
+        if self.default_auth:
+            # don't use impersonated token
+            creds, _ = default()
+            return creds
         return self._token
 
     def _check_scopes(self):

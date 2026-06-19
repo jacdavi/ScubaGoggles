@@ -406,7 +406,7 @@ class ScubaConfigApp:
                 'outputregofilename': '',
                 'outputreportfilename': '',
                 'numberofuuidcharacterstotruncate': 18,
-                'accesstoken': '',
+                'defaultauth': False,
             }
 
         if 'ui_show_help' not in st.session_state:
@@ -687,7 +687,7 @@ class ScubaConfigApp:
             'outjsonfilename', 'regopath', 'documentpath',
             'outputproviderfilename', 'outputactionplanfilename',
             'outputregofilename', 'outputreportfilename',
-            'accesstoken',
+            'defaultauth',
         ):
             if key in config:
                 data[key] = str(config[key])
@@ -2237,6 +2237,7 @@ class ScubaConfigApp:
         # --- Access token ---
         st.markdown("### Authentication")
 
+        # TODO: replace with defaultauth checkbox
         data['accesstoken'] = st.text_input(
             "Access Token",
             value=data.get('accesstoken', ''),

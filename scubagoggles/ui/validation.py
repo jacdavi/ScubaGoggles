@@ -205,16 +205,16 @@ class ConfigValidator:
     ):
         """Validate authentication fields and append any errors."""
         has_creds = config_dict.get("credentials")
-        has_token = config_dict.get("accesstoken")
+        use_default_auth = config_dict.get("defaultauth")
 
-        if not has_creds and not has_token:
+        if not has_creds and not use_default_auth:
             errors.append("Either credentials file or access token is required")
         elif has_creds:
             is_valid, error = ConfigValidator.validate_credentials_file(has_creds)
             if not is_valid:
                 errors.append(f"Credentials validation: {error}")
-        elif has_token:
-            is_valid, error = ConfigValidator.validate_access_token(has_token)
+        elif use_default_auth:
+            is_valid, error = ConfigValidator.validate_access_token(use_default_auth)
             if not is_valid:
                 errors.append(f"Access token validation: {error}")
 
