@@ -37,8 +37,9 @@ class GwsAuth:
 
         :param credentials_path: path to the Google JSON-format
             credentials file.
-        :param access_token: (optional) access token string that will be used
-            instead of the credentials file.
+        :param default_ath: (optional) if set, will attempt to authenticate
+            via `default()` method supporting various Google environments.
+            Service account must have `iam.serviceAccountTokenCreator` permission.
         :param svc_account_email: (optional) email address for the service
             account.
         """
@@ -100,11 +101,10 @@ class GwsAuth:
 
         if self._default_auth or not self._svc_account_email:
             self._refresh_token()
-        # if using default auth we need to impersonate
         if self._default_auth:
+            # if using default auth we need a new credential with impersonation
+            # see: https://github.com/GoogleCloudPlatform/professional-services/tree/main/examples/gce-to-adminsdk
             signer = iam.Signer(Request(), self._token, self._token.service_account_email)
-            # Create OAuth 2.0 Service Account credentials using the IAM-based
-            # signer and the bootstrap_credential's service account email.
             updated_credentials = SvcCredentials(
                 signer,
                 self._token.service_account_email,
