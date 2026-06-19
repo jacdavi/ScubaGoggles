@@ -59,7 +59,7 @@ class GwsAuth:
 
             # Create OAuth 2.0 Service Account credentials using the IAM-based
             # signer and the bootstrap_credential's service account email.
-            updated_credentials = Credentials(
+            updated_credentials = SvcCredentials(
                 signer,
                 credentials.service_account_email,
                 "https://accounts.google.com/o/oauth2/token",
