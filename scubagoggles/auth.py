@@ -44,33 +44,11 @@ class GwsAuth:
         """
 
         self._svc_account_email = svc_account_email
-        self.default_auth = default_auth
+        self._default_auth = default_auth
 
         if default_auth:
-            credentials, _ = default()
-            request = Request()
-
-            # Refresh the default credentials. This ensures that the information
-            # about this account, notably the email, is populated.
-            credentials.refresh(request)
-
-            # Create an IAM signer using the default credentials.
-            signer = iam.Signer(request, credentials, credentials.service_account_email)
-
-            # Create OAuth 2.0 Service Account credentials using the IAM-based
-            # signer and the bootstrap_credential's service account email.
-            updated_credentials = SvcCredentials(
-                signer,
-                credentials.service_account_email,
-                "https://accounts.google.com/o/oauth2/token",
-                scopes=DWD_SCOPES,
-                subject=svc_account_email,
-            )
-            updated_credentials.refresh(Request())
-
-            if not updated_credentials.valid:
-                raise Exception(f"Couldn't get valid credentials for {svc_account_email}")
-            self._token = updated_credentials
+            # NOTE: extra scope here allows credentials to generate new versions. This is necessary for impersonation
+            self._token, _ = default(scopes=(*DASA_SCOPES, 'https://www.googleapis.com/auth/cloud-platform'))
             return
         
         credentials_path = Path(credentials_path)
@@ -120,8 +98,24 @@ class GwsAuth:
         :return: valid Google credentials
         """
 
-        if not self._svc_account_email:
+        if self._default_auth or not self._svc_account_email:
             self._refresh_token()
+        # if using default auth we need to impersonate
+        if self._default_auth:
+            signer = iam.Signer(Request(), self._token, self._token.service_account_email)
+            # Create OAuth 2.0 Service Account credentials using the IAM-based
+            # signer and the bootstrap_credential's service account email.
+            updated_credentials = SvcCredentials(
+                signer,
+                self._token.service_account_email,
+                "https://accounts.google.com/o/oauth2/token",
+                scopes=DWD_SCOPES,
+                subject=self._svc_account_email,
+            )
+            updated_credentials.refresh(Request())
+            if not updated_credentials.valid:
+                raise Exception(f"Couldn't get valid credentials for {self._svc_account_email}")
+            return updated_credentials
 
         return self._token
 
@@ -140,10 +134,8 @@ class GwsAuth:
                 str(self._credentials_path),
                 scopes=DASA_SCOPES
             )
-        if self.default_auth:
-            # don't use impersonated token
-            creds, _ = default()
-            return creds
+        if self._default_auth:
+            self._refresh_token()
         return self._token
 
     def _check_scopes(self):
@@ -211,7 +203,8 @@ class GwsAuth:
 
         if self._token.token_state != TokenState.FRESH:
             self._token.refresh(Request())
-            self._save_token()
+            if not self._default_auth:
+                self._save_token()
 
     def _save_token(self):
         """Writes the Google credentials to the token JSON file.
